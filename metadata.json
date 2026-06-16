@@ -1,0 +1,6 @@
+{
+  "name": "SystemPulse",
+  "description": "Premium real-time Android system performance, network speed, and hardware monitor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
