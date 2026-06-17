@@ -19,10 +19,6 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
     private val repository: SystemInfoRepository = SystemInfoRepositoryImpl(context)
     private val prefs: SharedPreferences = context.getSharedPreferences("system_pulse_prefs", Context.MODE_PRIVATE)
 
-    init {
-        refreshProcesses()
-    }
-
     // Reactively track refresh interval preference (ms)
     private val _refreshIntervalMs = MutableStateFlow(prefs.getLong("refresh_interval", 1000L))
     val refreshIntervalMs: StateFlow<Long> = _refreshIntervalMs.asStateFlow()
@@ -85,6 +81,10 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    init {
+        refreshProcesses()
+    }
 
     fun refreshProcesses() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
