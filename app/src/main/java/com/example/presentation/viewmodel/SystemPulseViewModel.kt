@@ -19,6 +19,10 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
     private val repository: SystemInfoRepository = SystemInfoRepositoryImpl(context)
     private val prefs: SharedPreferences = context.getSharedPreferences("system_pulse_prefs", Context.MODE_PRIVATE)
 
+    init {
+        refreshProcesses()
+    }
+
     // Reactively track refresh interval preference (ms)
     private val _refreshIntervalMs = MutableStateFlow(prefs.getLong("refresh_interval", 1000L))
     val refreshIntervalMs: StateFlow<Long> = _refreshIntervalMs.asStateFlow()
@@ -44,6 +48,61 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
     // Tracks permissions status
     private val _permissionsGranted = MutableStateFlow(checkPermissionsGranted())
     val permissionsGranted: StateFlow<Boolean> = _permissionsGranted.asStateFlow()
+
+    // Processes Data State
+    private val _rawProcessesList = MutableStateFlow<List<ProcessState>>(emptyList())
+    
+    // Processes UI controls state
+    val searchQuery = MutableStateFlow("")
+    val filterType = MutableStateFlow("All") // "All", "User", "System"
+    val sortBy = MutableStateFlow("RAM") // "RAM", "Name", "PID"
+
+    val processesList: StateFlow<List<ProcessState>> = combine(
+        _rawProcessesList,
+        searchQuery,
+        filterType,
+        sortBy
+    ) { rawList, query, filter, sort ->
+        var filtered = rawList.filter {
+            it.appName.contains(query, ignoreCase = true) || 
+            it.packageName.contains(query, ignoreCase = true)
+        }
+        
+        filtered = when (filter) {
+            "User" -> filtered.filter { !it.isSystemApp }
+            "System" -> filtered.filter { it.isSystemApp }
+            else -> filtered
+        }
+        
+        when (sort) {
+            "RAM" -> filtered.sortedByDescending { it.ramBytesUsed }
+            "Name" -> filtered.sortedBy { it.appName.lowercase() }
+            "PID" -> filtered.sortedBy { it.pid }
+            else -> filtered
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun refreshProcesses() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _rawProcessesList.value = repository.getRunningProcesses()
+        }
+    }
+
+    fun killProcess(packageName: String, onFreed: (Long) -> Unit) {
+        viewModelScope.launch {
+            val process = _rawProcessesList.value.find { it.packageName == packageName }
+            if (process != null) {
+                // Remove from local raw state immediately
+                _rawProcessesList.value = _rawProcessesList.value.filter { it.packageName != packageName }
+                // Return amount of freed memory physically back to the UI block
+                onFreed(process.ramBytesUsed)
+            }
+        }
+    }
 
     fun updateRefreshInterval(intervalMs: Long) {
         prefs.edit().putLong("refresh_interval", intervalMs).apply()

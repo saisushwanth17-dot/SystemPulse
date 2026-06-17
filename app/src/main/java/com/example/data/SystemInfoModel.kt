@@ -55,3 +55,16 @@ data class SystemOverviewState(
     val network: NetworkSpeedState,
     val battery: BatteryState
 )
+
+@Immutable
+data class ProcessState(
+    val pid: Int,
+    val processName: String,
+    val appName: String,
+    val packageName: String,
+    val ramBytesUsed: Long,
+    val isSystemApp: Boolean,
+    val importance: String,
+    val lastActiveTime: Long = 0L
+)
+

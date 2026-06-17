@@ -12,6 +12,7 @@ import androidx.navigation.compose.*
 import com.example.presentation.screens.DashboardScreen
 import com.example.presentation.screens.PerformanceScreen
 import com.example.presentation.screens.PermissionScreen
+import com.example.presentation.screens.ProcessesScreen
 import com.example.presentation.screens.SettingsScreen
 import com.example.presentation.viewmodel.SystemPulseViewModel
 
@@ -48,7 +49,7 @@ fun MainAppShell(
                     tonalElevation = 8.dp,
                     windowInsets = WindowInsets.navigationBars
                 ) {
-                    val items = listOf(Screen.Dashboard, Screen.Performance, Screen.Settings)
+                    val items = listOf(Screen.Dashboard, Screen.Performance, Screen.Processes, Screen.Settings)
                     items.forEach { screen ->
                         val selected = currentRoute == screen.route
                         NavigationBarItem(
@@ -109,6 +110,10 @@ fun MainAppShell(
 
             composable(Screen.Performance.route) {
                 PerformanceScreen(viewModel = viewModel)
+            }
+
+            composable(Screen.Processes.route) {
+                ProcessesScreen(viewModel = viewModel)
             }
 
             composable(Screen.Settings.route) {
