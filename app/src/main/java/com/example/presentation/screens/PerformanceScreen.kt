@@ -83,7 +83,7 @@ fun PerformanceScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Outlined.Cpu,
+                                imageVector = Icons.Outlined.DeveloperBoard,
                                 contentDescription = null,
                                 tint = themeAccent,
                                 modifier = Modifier.size(20.dp)

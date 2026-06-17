@@ -46,7 +46,7 @@ fun CircularPulseGauge(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val sizeMin = size.minDimension
             val radius = (sizeMin - strokeWidth.toPx()) / 2f
-            val center = size.center
+            val center = this.center
 
             // Draw track
             drawCircle(
