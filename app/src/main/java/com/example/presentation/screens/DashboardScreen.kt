@@ -115,9 +115,9 @@ fun DashboardScreen(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Day 1 Fundamentals Active",
+                                text = "Day 3 Advanced Diagnostics Enabled",
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Bold,
                                 color = themeAccent
                             )
                         }
