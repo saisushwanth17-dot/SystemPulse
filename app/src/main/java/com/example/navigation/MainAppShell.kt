@@ -9,11 +9,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-import com.example.presentation.screens.DashboardScreen
+import com.example.presentation.screens.DetailsScreen
 import com.example.presentation.screens.PerformanceScreen
 import com.example.presentation.screens.PermissionScreen
 import com.example.presentation.screens.ProcessesScreen
-import com.example.presentation.screens.SettingsScreen
+import com.example.presentation.screens.ServicesScreen
 import com.example.presentation.viewmodel.SystemPulseViewModel
 
 @Composable
@@ -28,16 +28,16 @@ fun MainAppShell(
 
     val accentIndex by viewModel.accentColorIndex.collectAsState()
     val accentColors = listOf(
-        Color(0xFF00E5FF), // Cyan
-        Color(0xFF00E676), // Green
-        Color(0xFF2979FF), // Blue
+        Color(0xFF00ACC1), // Soft Cyan
+        Color(0xFF43A047), // Soft Green
+        Color(0xFF1E88E5), // Soft Blue
         Color(0xFFFF9100), // Orange
         Color(0xFFFF1744)  // Red
     )
-    val themeAccent = accentColors.getOrElse(accentIndex) { Color(0xFF00E5FF) }
+    val themeAccent = accentColors.getOrElse(accentIndex) { Color(0xFF1E88E5) }
 
-    // Start screen logic: if permissions granted, jump straight to Dashboard; otherwise onboarding
-    val startDestination = if (isGranted) Screen.Dashboard.route else Screen.Onboarding.route
+    // Start screen logic: if permissions granted, jump straight to Processes; otherwise onboarding
+    val startDestination = if (isGranted) Screen.Processes.route else Screen.Onboarding.route
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -49,7 +49,7 @@ fun MainAppShell(
                     tonalElevation = 8.dp,
                     windowInsets = WindowInsets.navigationBars
                 ) {
-                    val items = listOf(Screen.Dashboard, Screen.Performance, Screen.Processes, Screen.Settings)
+                    val items = listOf(Screen.Processes, Screen.Performance, Screen.Details, Screen.Services)
                     items.forEach { screen ->
                         val selected = currentRoute == screen.route
                         NavigationBarItem(
@@ -64,61 +64,64 @@ fun MainAppShell(
                                         restoreState = true
                                     }
                                 }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = screen.icon,
-                                    contentDescription = screen.title
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = screen.title,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = themeAccent,
-                                selectedTextColor = themeAccent,
-                                indicatorColor = themeAccent.copy(alpha = 0.12f)
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Onboarding.route) {
-                PermissionScreen(
-                    viewModel = viewModel,
-                    onNavigateToDashboard = {
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo(Screen.Onboarding.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
+                             },
+                             icon = {
+                                 Icon(
+                                     imageVector = screen.icon,
+                                     contentDescription = screen.title
+                                 )
+                             },
+                             label = {
+                                 Text(
+                                     text = screen.title,
+                                     style = MaterialTheme.typography.labelMedium
+                                 )
+                             },
+                             colors = NavigationBarItemDefaults.colors(
+                                 selectedIconColor = themeAccent,
+                                 selectedTextColor = themeAccent,
+                                 indicatorColor = themeAccent.copy(alpha = 0.15f),
+                                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                             )
+                         )
+                     }
+                 }
+             }
+         }
+     ) { innerPadding ->
+         NavHost(
+             navController = navController,
+             startDestination = startDestination,
+             modifier = Modifier.padding(innerPadding)
+         ) {
+             composable(Screen.Onboarding.route) {
+                 PermissionScreen(
+                     viewModel = viewModel,
+                     onNavigateToDashboard = {
+                         navController.navigate(Screen.Processes.route) {
+                             popUpTo(Screen.Onboarding.route) { inclusive = true }
+                         }
+                     }
+                 )
+             }
+ 
+             composable(Screen.Processes.route) {
+                 ProcessesScreen(viewModel = viewModel)
+             }
+ 
+             composable(Screen.Performance.route) {
+                 PerformanceScreen(viewModel = viewModel)
+             }
+ 
+             composable(Screen.Details.route) {
+                 DetailsScreen(viewModel = viewModel)
+             }
+ 
+             composable(Screen.Services.route) {
+                 ServicesScreen(viewModel = viewModel)
+             }
+         }
+     }
+ }
 
-            composable(Screen.Dashboard.route) {
-                DashboardScreen(viewModel = viewModel)
-            }
-
-            composable(Screen.Performance.route) {
-                PerformanceScreen(viewModel = viewModel)
-            }
-
-            composable(Screen.Processes.route) {
-                ProcessesScreen(viewModel = viewModel)
-            }
-
-            composable(Screen.Settings.route) {
-                SettingsScreen(viewModel = viewModel)
-            }
-        }
-    }
-}
