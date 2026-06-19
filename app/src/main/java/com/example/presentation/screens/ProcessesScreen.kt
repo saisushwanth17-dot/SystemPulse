@@ -503,11 +503,12 @@ fun MetricBox(
 ) {
     Box(
         modifier = modifier
+            .height(80.dp)
             .glassmorphic(cornerRadius = 12.dp, alpha = 0.1f)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(vertical = 10.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -521,7 +522,7 @@ fun MetricBox(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = color
             )

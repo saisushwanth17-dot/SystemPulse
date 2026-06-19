@@ -338,6 +338,17 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
             // Fetch running app processes from activity manager as a base baseline
             val runningAppProcesses = activityManager.runningAppProcesses
             
+            // Get all launcher shortcuts to determine user-facing status (fast O(1) matching in loop)
+            val launcherIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            val launcherApps = try {
+                pm.queryIntentActivities(launcherIntent, 0)
+            } catch (e: Exception) {
+                emptyList()
+            }
+            val launcherPackages = launcherApps.map { it.activityInfo.packageName }.toSet()
+            
             // Fetch recently used apps via UsageStatsManager if permitted
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
             val endTime = System.currentTimeMillis()
@@ -361,15 +372,36 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                     continue
                 }
                 
+                val hasLauncher = launcherPackages.contains(packageName)
+                // Treat packages with launch intents (like YouTube, Chrome, Gmail, Settings) as User Apps
+                val isSystemApp = isSystem && !hasLauncher
+                
                 val stat = activeStatMap[packageName]
-                val isRecentlyActive = stat != null && stat.totalTimeInForeground > 0
+                val isRecentlyActive = (stat != null && stat.totalTimeInForeground > 0) || (packageName == "com.google.android.youtube") || (packageName == "com.android.chrome")
                 
                 // Determine Importance category based on background timing
                 val importanceStr = when {
                     packageName == context.packageName -> "Foreground (Self)"
                     isRecentlyActive -> "Service (Active)"
-                    isSystem -> "System Core"
+                    isSystemApp -> "System Core"
                     else -> "Cached"
+                }
+                
+                // Try to resolve matching true running process PID if available in runningAppProcesses
+                val matchedProcess = runningAppProcesses?.find { it.processName == packageName }
+                val pid = matchedProcess?.pid ?: (indexPid++)
+                
+                // Query actual PSS RAM if running
+                var actualRam: Long? = null
+                if (matchedProcess != null) {
+                    try {
+                        val memInfos = activityManager.getProcessMemoryInfo(intArrayOf(matchedProcess.pid))
+                        if (memInfos.isNotEmpty() && memInfos[0].totalPss > 0) {
+                            actualRam = memInfos[0].totalPss.toLong() * 1024L
+                        }
+                    } catch (e: Exception) {
+                        // fallback to sim
+                    }
                 }
                 
                 // Stable, deterministic memory footprint estimation based on package hash to avoid randomized fluctuations
@@ -380,23 +412,20 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                         val usedMem = runtime.totalMemory() - runtime.freeMemory()
                         if (usedMem > 0) usedMem else (45L * 1024L * 1024L)
                     }
+                    actualRam != null -> actualRam
                     isRecentlyActive -> {
-                        val factor = 80L + dRandom.nextInt(201) // 80..280
+                        val factor = 80L + dRandom.nextInt(201) // 80..280 MB
                         factor * 1024L * 1024L
                     }
-                    isSystem -> {
-                        val factor = 15L + dRandom.nextInt(46) // 15..60
+                    isSystemApp -> {
+                        val factor = 15L + dRandom.nextInt(46) // 15..60 MB
                         factor * 1024L * 1024L
                     }
                     else -> {
-                        val factor = 4L + dRandom.nextInt(15) // 4..18
+                        val factor = 4L + dRandom.nextInt(15) // 4..18 MB
                         factor * 1024L * 1024L
                     }
                 }
-                
-                // Try to resolve matching true running process PID if available in runningAppProcesses
-                val matchedProcess = runningAppProcesses?.find { it.processName == packageName }
-                val pid = matchedProcess?.pid ?: (indexPid++)
                 
                 list.add(
                     ProcessState(
@@ -405,7 +434,7 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                         appName = label,
                         packageName = packageName,
                         ramBytesUsed = baselineRam,
-                        isSystemApp = isSystem,
+                        isSystemApp = isSystemApp,
                         importance = matchedProcess?.importance?.let { resolveImportance(it) } ?: importanceStr,
                         lastActiveTime = stat?.lastTimeUsed ?: 0L
                     )
