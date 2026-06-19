@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.ui.theme.GlassAmbientBackground
+import com.example.ui.theme.glassmorphic
 import com.example.util.Formatters
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -45,11 +47,11 @@ fun PerformanceScreen(
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val accentIndex by viewModel.accentColorIndex.collectAsState()
 
-    // Soft diagnostic aesthetic styling
-    val diagnosticBg = if (isDarkMode) Color(0xFF0B1017) else Color(0xFFEBF1F5)
-    val cardBg = if (isDarkMode) Color(0xFF131A24) else Color(0xFFFFFFFF)
-    val onBg = if (isDarkMode) Color(0xFFECEFF1) else Color(0xFF263238)
-    val outlineColor = if (isDarkMode) Color(0xFF243046) else Color(0xFFE2EAF1)
+    // Enforce dark-mode premium Glassmorphism theme
+    val diagnosticBg = Color.Transparent
+    val cardBg = Color.White.copy(alpha = 0.08f)
+    val onBg = Color.White
+    val outlineColor = Color.White.copy(alpha = 0.12f)
 
     val accentColors = listOf(
         Color(0xFF00ACC1), // Cyan
@@ -139,37 +141,38 @@ fun PerformanceScreen(
 
     var isLiveSectionCollapsed by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = diagnosticBg,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Performance",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        ),
-                        color = onBg
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = onBg
+    GlassAmbientBackground(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Performance",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            ),
+                            color = onBg
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = diagnosticBg,
-                    titleContentColor = onBg
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = onBg
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = onBg
+                    )
                 )
-            )
-        }
-    ) { innerPadding ->
+            }
+        ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -258,13 +261,11 @@ fun PerformanceScreen(
             }
 
             // Live Double Wave Card (Exactly as shown in the mockup)
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = cardBg),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, outlineColor)
+                    .padding(bottom = 16.dp)
+                    .glassmorphic(cornerRadius = 16.dp, alpha = 0.08f)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Title Header Section
@@ -372,6 +373,7 @@ fun PerformanceScreen(
         }
     }
 }
+}
 
 @Composable
 fun LiveGridMetricCard(
@@ -380,17 +382,16 @@ fun LiveGridMetricCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     graphPoints: List<Float>,
     color: Color,
-    isFilledGraph: Boolean = false,
+    isFilledGraph: Boolean = true,
     cardBg: Color,
     onBg: Color,
     outlineColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.height(136.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, outlineColor)
+    Box(
+        modifier = modifier
+            .height(136.dp)
+            .glassmorphic(cornerRadius = 12.dp, alpha = 0.08f)
     ) {
         Column(
             modifier = Modifier

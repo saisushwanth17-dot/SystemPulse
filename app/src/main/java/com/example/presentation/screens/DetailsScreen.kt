@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.ui.theme.GlassAmbientBackground
+import com.example.ui.theme.glassmorphic
 import com.example.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,11 +39,11 @@ fun DetailsScreen(
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val accentIndex by viewModel.accentColorIndex.collectAsState()
 
-    // Soft diagnostic styling matching the mockup
-    val diagnosticBg = if (isDarkMode) Color(0xFF0B1017) else Color(0xFFEBF1F5)
-    val cardBg = if (isDarkMode) Color(0xFF131A24) else Color(0xFFFFFFFF)
-    val onBg = if (isDarkMode) Color(0xFFECEFF1) else Color(0xFF263238)
-    val outlineColor = if (isDarkMode) Color(0xFF243046) else Color(0xFFE2EAF1)
+    // Enforce dark-mode premium Glassmorphism theme
+    val diagnosticBg = Color.Transparent
+    val cardBg = Color.Transparent
+    val onBg = Color.White
+    val outlineColor = Color.White.copy(alpha = 0.12f)
 
     val accentColors = listOf(
         Color(0xFF00ACC1), // Cyan
@@ -56,64 +58,67 @@ fun DetailsScreen(
     var selectedItemIndex by remember { mutableStateOf<Int?>(null) }
     var showTopMenu by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = diagnosticBg,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Detailed Processes (PID)",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        color = onBg
+    GlassAmbientBackground(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Detailed Processes (PID)",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
+                            color = onBg
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = onBg
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showTopMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More",
+                                tint = onBg
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showTopMenu,
+                            onDismissRequest = { showTopMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Sort by PID") },
+                                onClick = { showTopMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sort by PSS Memory") },
+                                onClick = { showTopMenu = false }
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = onBg
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = onBg
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showTopMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More",
-                            tint = onBg
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showTopMenu,
-                        onDismissRequest = { showTopMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Sort by PID") },
-                            onClick = { showTopMenu = false }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sort by PSS Memory") },
-                            onClick = { showTopMenu = false }
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = diagnosticBg,
-                    titleContentColor = onBg
                 )
-            )
-        }
-    ) { innerPadding ->
+            }
+        ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(12.dp)
+                .glassmorphic(16.dp, alpha = 0.08f)
+                .padding(12.dp)
         ) {
             // Table Header row (PID | Process | PSS | Private Dirty) matching the mockup precisely
             Row(
@@ -189,12 +194,12 @@ fun DetailsScreen(
                         val pssBytes = (process.ramBytesUsed * 0.08).toLong().coerceAtLeast(1024 * 1024)
                         val dirtyBytes = (process.ramBytesUsed * 0.06).toLong().coerceAtLeast(512 * 1024)
 
-                        // Highlight background if the item has an opened menu, exactly like com.google.chrome row 2101 highlighted blue in mockup!
+                        // Highlighting active rows (like the running Chrome processes in mockup) should use a subtle glowing neon-teal background tint (Color(0x2600F5D4))
                         val isHighlighted = selectedItemIndex == index
                         val rowBg = if (isHighlighted) {
-                            themeAccent.copy(alpha = 0.16f)
+                            Color(0x2600F5D4)
                         } else {
-                            cardBg
+                            Color.Transparent
                         }
 
                         // Determine simulated thread stats
@@ -274,13 +279,12 @@ fun DetailsScreen(
                                 )
                             }
 
-                            // POPUP Context Menu (Matchescom.google.chrome popup exact style)
+                            // POPUP Context Menu - styled like a thick, high-blur frosted glass overlay
                             DropdownMenu(
                                 expanded = isHighlighted,
                                 onDismissRequest = { selectedItemIndex = null },
                                 modifier = Modifier
-                                    .background(cardBg)
-                                    .border(BorderStroke(1.dp, outlineColor), shape = RoundedCornerShape(8.dp))
+                                    .glassmorphic(cornerRadius = 12.dp, alpha = 0.22f, borderAlphaScale = 1.8f)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("Change Priority", fontWeight = FontWeight.SemiBold) },
@@ -308,4 +312,5 @@ fun DetailsScreen(
             }
         }
     }
+}
 }

@@ -15,6 +15,7 @@ import com.example.presentation.screens.PermissionScreen
 import com.example.presentation.screens.ProcessesScreen
 import com.example.presentation.screens.ServicesScreen
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.ui.theme.glassmorphic
 
 @Composable
 fun MainAppShell(
@@ -45,8 +46,9 @@ fun MainAppShell(
             // Only draw bottom navigation if we are NOT on the onboarding screen
             if (currentRoute != Screen.Onboarding.route) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 8.dp,
+                    modifier = Modifier.glassmorphic(cornerRadius = 16.dp, alpha = 0.08f),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
                     windowInsets = WindowInsets.navigationBars
                 ) {
                     val items = listOf(Screen.Processes, Screen.Performance, Screen.Details, Screen.Services)

@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.ui.theme.GlassAmbientBackground
+import com.example.ui.theme.glassmorphic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -43,11 +45,11 @@ fun ServicesScreen(
     val accentIndex by viewModel.accentColorIndex.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Soft diagnostic styling matching the mockup
-    val diagnosticBg = if (isDarkMode) Color(0xFF0B1017) else Color(0xFFEBF1F5)
-    val cardBg = if (isDarkMode) Color(0xFF131A24) else Color(0xFFFFFFFF)
-    val onBg = if (isDarkMode) Color(0xFFECEFF1) else Color(0xFF263238)
-    val outlineColor = if (isDarkMode) Color(0xFF243046) else Color(0xFFE2EAF1)
+    // Enforce dark-mode premium Glassmorphism theme
+    val diagnosticBg = Color.Transparent
+    val cardBg = Color.White.copy(alpha = 0.08f)
+    val onBg = Color.White
+    val outlineColor = Color.White.copy(alpha = 0.12f)
 
     val accentColors = listOf(
         Color(0xFF00ACC1), // Cyan
@@ -110,37 +112,38 @@ fun ServicesScreen(
         )
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = diagnosticBg,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Services",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        ),
-                        color = onBg
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = onBg
+    GlassAmbientBackground(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Services",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            ),
+                            color = onBg
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = diagnosticBg,
-                    titleContentColor = onBg
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = onBg
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = onBg
+                    )
                 )
-            )
-        }
-    ) { innerPadding ->
+            }
+        ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -308,6 +311,7 @@ fun ServicesScreen(
         }
     }
 }
+}
 
 @Composable
 fun ServiceSectionHeader(
@@ -316,25 +320,30 @@ fun ServiceSectionHeader(
     onBg: Color,
     onToggle: () -> Unit
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .glassmorphic(cornerRadius = 8.dp, alpha = 0.16f)
             .clickable { onToggle() }
-            .padding(vertical = 12.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 10.dp, horizontal = 16.dp)
     ) {
-        Text(
-            text = title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = onBg
-        )
-        Icon(
-            imageVector = if (isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-            contentDescription = null,
-            tint = onBg.copy(alpha = 0.5f)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = onBg
+            )
+            Icon(
+                imageVector = if (isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                contentDescription = null,
+                tint = onBg.copy(alpha = 0.5f)
+            )
+        }
     }
 }
 
@@ -347,11 +356,10 @@ fun ServiceItemRow(
     themeAccent: Color,
     onToggle: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, outlineColor)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glassmorphic(cornerRadius = 12.dp, alpha = 0.08f)
     ) {
         Row(
             modifier = Modifier
@@ -378,16 +386,16 @@ fun ServiceItemRow(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Switch Toggler
+            // Switch Toggler with vibrant glowing active track
             Switch(
                 checked = service.isEnabled,
                 onCheckedChange = onToggle,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF00ACC1), // Soft Cyan theme
-                    uncheckedThumbColor = onBg.copy(alpha = 0.3f),
-                    uncheckedTrackColor = onBg.copy(alpha = 0.08f),
-                    uncheckedBorderColor = onBg.copy(alpha = 0.15f)
+                    checkedTrackColor = Color(0xFF00E5FF), // Glowing Neon Cyan
+                    uncheckedThumbColor = Color.White.copy(alpha = 0.4f),
+                    uncheckedTrackColor = Color.White.copy(alpha = 0.05f),
+                    uncheckedBorderColor = Color.White.copy(alpha = 0.15f)
                 )
             )
         }

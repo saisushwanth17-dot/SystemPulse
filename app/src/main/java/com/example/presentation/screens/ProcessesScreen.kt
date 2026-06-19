@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.data.ProcessState
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.ui.theme.GlassAmbientBackground
+import com.example.ui.theme.glassmorphic
 import com.example.util.Formatters
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -77,36 +79,37 @@ fun ProcessesScreen(
         viewModel.refreshProcesses()
     }
 
-    // Determine the soft diagnostic background
-    val diagnosticBg = if (isDarkMode) Color(0xFF0B1017) else Color(0xFFEBF1F5)
-    val cardBg = if (isDarkMode) Color(0xFF131A24) else Color(0xFFFFFFFF)
-    val onBg = if (isDarkMode) Color(0xFFECEFF1) else Color(0xFF263238)
-    val outlineColor = if (isDarkMode) Color(0xFF243046) else Color(0xFFE2EAF1)
+    // Enforce dark-mode premium Glassmorphism theme
+    val diagnosticBg = Color.Transparent
+    val cardBg = Color.White.copy(alpha = 0.08f)
+    val onBg = Color.White
+    val outlineColor = Color.White.copy(alpha = 0.12f)
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = diagnosticBg,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Processes",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        ),
-                        color = onBg
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Menu",
-                            tint = onBg
+    GlassAmbientBackground(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Processes",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            ),
+                            color = onBg
                         )
-                    }
-                },
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu",
+                                tint = onBg
+                            )
+                        }
+                    },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
@@ -178,7 +181,7 @@ fun ProcessesScreen(
                 MetricBox(
                     label = "CPU:",
                     value = rawSystemState?.cpu?.totalUsagePercent?.let { "${it.toInt()}%" } ?: "--%",
-                    color = Color(0xFF1E88E5), // Blue
+                    color = Color(0xFF00E5FF), // Neon Cyan
                     onBg = onBg,
                     cardBg = cardBg,
                     modifier = Modifier.weight(1f)
@@ -187,7 +190,7 @@ fun ProcessesScreen(
                 MetricBox(
                     label = "Memory:",
                     value = rawSystemState?.ram?.usagePercent?.let { "${it.toInt()}%" } ?: "--%",
-                    color = Color(0xFF43A047), // Green
+                    color = Color(0xFFD500F9), // Neon Purple
                     onBg = onBg,
                     cardBg = cardBg,
                     modifier = Modifier.weight(1f)
@@ -196,7 +199,7 @@ fun ProcessesScreen(
                 MetricBox(
                     label = "Disk:",
                     value = rawSystemState?.storage?.usagePercent?.let { "${it.toInt()}%" } ?: "--%",
-                    color = Color(0xFFFF9100), // Orange
+                    color = Color(0xFFFF9100), // Neon Amber/Orange
                     onBg = onBg,
                     cardBg = cardBg,
                     modifier = Modifier.weight(1f)
@@ -205,7 +208,7 @@ fun ProcessesScreen(
                 MetricBox(
                     label = "Data:",
                     value = rawSystemState?.network?.let { Formatters.formatSpeed(it.rxBytesPerSec) } ?: "0 bps",
-                    color = onBg.copy(alpha = 0.5f), // Grayish
+                    color = Color(0xFF2979FF), // Neon Blue
                     onBg = onBg,
                     cardBg = cardBg,
                     modifier = Modifier.weight(1f)
@@ -450,6 +453,7 @@ fun ProcessesScreen(
             }
         }
     }
+}
 
     // Refresh Interval Dialog
     if (showIntervalDialog) {
@@ -497,30 +501,28 @@ fun MetricBox(
     cardBg: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, onBg.copy(alpha = 0.05f))
+    Box(
+        modifier = modifier
+            .glassmorphic(cornerRadius = 12.dp, alpha = 0.1f)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 6.dp),
+                .padding(vertical = 10.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = label,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = onBg.copy(alpha = 0.5f)
+                fontWeight = FontWeight.Bold,
+                color = onBg.copy(alpha = 0.6f)
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 color = color
             )
         }
@@ -591,13 +593,11 @@ fun ElegantProcessRow(
         }
     }
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onToggleExpand() },
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, outlineColor)
+            .glassmorphic(cornerRadius = 12.dp, alpha = 0.08f)
+            .clickable { onToggleExpand() }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
