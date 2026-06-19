@@ -30,6 +30,7 @@ import com.example.util.Formatters
 @Composable
 fun DetailsScreen(
     viewModel: SystemPulseViewModel,
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val processes by viewModel.processesList.collectAsState()
@@ -71,7 +72,7 @@ fun DetailsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",

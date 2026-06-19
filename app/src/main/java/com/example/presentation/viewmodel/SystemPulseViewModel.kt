@@ -84,6 +84,16 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
 
     init {
         refreshProcesses()
+        viewModelScope.launch {
+            _refreshIntervalMs.collectLatest { interval ->
+                // Ensure a sensible minimum rate of process pulling so we don't hog resource
+                val safeInterval = interval.coerceAtLeast(1500L)
+                while (true) {
+                    delay(safeInterval)
+                    refreshProcesses()
+                }
+            }
+        }
     }
 
     fun refreshProcesses() {

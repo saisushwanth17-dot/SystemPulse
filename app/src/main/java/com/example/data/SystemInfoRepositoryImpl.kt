@@ -372,23 +372,24 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                     else -> "Cached"
                 }
                 
-                // Simulated premium memory footprint estimation matching realistic heap footprints
+                // Stable, deterministic memory footprint estimation based on package hash to avoid randomized fluctuations
+                val dRandom = java.util.Random(packageName.hashCode().toLong())
                 val baselineRam = when {
                     packageName == context.packageName -> {
-                        val memInfo = ActivityManager.MemoryInfo()
-                        activityManager.getMemoryInfo(memInfo)
-                        45L * 1024L * 1024L
+                        val runtime = Runtime.getRuntime()
+                        val usedMem = runtime.totalMemory() - runtime.freeMemory()
+                        if (usedMem > 0) usedMem else (45L * 1024L * 1024L)
                     }
                     isRecentlyActive -> {
-                        val factor = (80..280).random().toLong()
+                        val factor = 80L + dRandom.nextInt(201) // 80..280
                         factor * 1024L * 1024L
                     }
                     isSystem -> {
-                        val factor = (15..60).random().toLong()
+                        val factor = 15L + dRandom.nextInt(46) // 15..60
                         factor * 1024L * 1024L
                     }
                     else -> {
-                        val factor = (4..18).random().toLong()
+                        val factor = 4L + dRandom.nextInt(15) // 4..18
                         factor * 1024L * 1024L
                     }
                 }

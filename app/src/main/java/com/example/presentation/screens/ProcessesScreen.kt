@@ -46,6 +46,7 @@ fun ProcessesScreen(
     
     // Core VM bindings
     val processes by viewModel.processesList.collectAsState()
+    val rawSystemState by viewModel.systemState.collectAsState()
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val accentIndex by viewModel.accentColorIndex.collectAsState()
     val refreshIntervalMs by viewModel.refreshIntervalMs.collectAsState()
@@ -176,7 +177,7 @@ fun ProcessesScreen(
                 // CPU Card
                 MetricBox(
                     label = "CPU:",
-                    value = "15%",
+                    value = rawSystemState?.cpu?.totalUsagePercent?.let { "${it.toInt()}%" } ?: "--%",
                     color = Color(0xFF1E88E5), // Blue
                     onBg = onBg,
                     cardBg = cardBg,
@@ -185,7 +186,7 @@ fun ProcessesScreen(
                 // Memory Card
                 MetricBox(
                     label = "Memory:",
-                    value = "29%",
+                    value = rawSystemState?.ram?.usagePercent?.let { "${it.toInt()}%" } ?: "--%",
                     color = Color(0xFF43A047), // Green
                     onBg = onBg,
                     cardBg = cardBg,
@@ -194,7 +195,7 @@ fun ProcessesScreen(
                 // Disk Card
                 MetricBox(
                     label = "Disk:",
-                    value = "51%",
+                    value = rawSystemState?.storage?.usagePercent?.let { "${it.toInt()}%" } ?: "--%",
                     color = Color(0xFFFF9100), // Orange
                     onBg = onBg,
                     cardBg = cardBg,
@@ -203,7 +204,7 @@ fun ProcessesScreen(
                 // Data Card
                 MetricBox(
                     label = "Data:",
-                    value = "0%",
+                    value = rawSystemState?.network?.let { Formatters.formatSpeed(it.rxBytesPerSec) } ?: "0 bps",
                     color = onBg.copy(alpha = 0.5f), // Grayish
                     onBg = onBg,
                     cardBg = cardBg,

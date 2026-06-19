@@ -28,12 +28,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.viewmodel.SystemPulseViewModel
+import com.example.util.Formatters
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerformanceScreen(
     viewModel: SystemPulseViewModel,
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val rawSystemState by viewModel.systemState.collectAsState()
@@ -69,12 +74,12 @@ fun PerformanceScreen(
     LaunchedEffect(Unit) {
         if (cpuHistory.isEmpty()) {
             for (i in 0..20) {
-                cpuHistory.add((10..22).random().toFloat())
-                memoryHistory.add((25..30).random().toFloat())
-                wifiHistory.add((15..28).random().toFloat())
-                mobileHistory.add((0..2).random().toFloat())
-                waveTopHistory.add((40..65).random().toFloat())
-                waveBottomHistory.add((20..38).random().toFloat())
+                cpuHistory.add(0f)
+                memoryHistory.add(0f)
+                wifiHistory.add(0f)
+                mobileHistory.add(0f)
+                waveTopHistory.add(0f)
+                waveBottomHistory.add(0f)
             }
         }
     }
@@ -85,7 +90,7 @@ fun PerformanceScreen(
         if (state != null) {
             val cpuVal = state.cpu.totalUsagePercent
             val ramVal = state.ram.usagePercent
-            val rxVal = (state.network.rxBytesPerSec / 1024f).coerceIn(0f, 100f)
+            val speedKb = state.network.rxBytesPerSec / 1024f
 
             cpuHistory.add(cpuVal)
             if (cpuHistory.size > 20) cpuHistory.removeAt(0)
@@ -93,52 +98,44 @@ fun PerformanceScreen(
             memoryHistory.add(ramVal)
             if (memoryHistory.size > 20) memoryHistory.removeAt(0)
 
-            wifiHistory.add(rxVal)
+            val wifiSpeed = if (state.network.activeInterface == "WiFi") speedKb else 0f
+            wifiHistory.add(wifiSpeed)
             if (wifiHistory.size > 20) wifiHistory.removeAt(0)
 
-            mobileHistory.add((0..1).random() + (Math.random() * 3).toFloat())
+            val mobileSpeed = if (state.network.activeInterface == "Cellular") speedKb else 0f
+            mobileHistory.add(mobileSpeed)
             if (mobileHistory.size > 20) mobileHistory.removeAt(0)
 
             // Feed Live double graph
-            waveTopHistory.add((cpuVal * 1.5f + 30f).coerceIn(10f, 95f))
+            waveTopHistory.add((cpuVal * 1.2f).coerceIn(0f, 100f))
             if (waveTopHistory.size > 30) waveTopHistory.removeAt(0)
             
-            waveBottomHistory.add((ramVal * 0.8f + 10f).coerceIn(5f, 90f))
+            waveBottomHistory.add((ramVal * 0.9f).coerceIn(0f, 100f))
             if (waveBottomHistory.size > 30) waveBottomHistory.removeAt(0)
         }
     }
 
-    // Secondary simulation loop for smooth live graph curves
+    // State tickers for live, clock-based statistics
+    var upTimeStr by remember { mutableStateOf("00:00:00") }
     LaunchedEffect(Unit) {
         while (true) {
-            delay(400)
-            if (cpuHistory.isNotEmpty()) {
-                val lastCpu = cpuHistory.last()
-                cpuHistory.add((lastCpu + (-4..4).random()).coerceIn(10f, 90f))
-                if (cpuHistory.size > 20) cpuHistory.removeAt(0)
-
-                val lastMem = memoryHistory.last()
-                memoryHistory.add((lastMem + (-2..2).random()).coerceIn(20f, 85f))
-                if (memoryHistory.size > 20) memoryHistory.removeAt(0)
-
-                val lastWifi = wifiHistory.last()
-                wifiHistory.add((lastWifi + (-5..5).random()).coerceIn(5f, 95f))
-                if (wifiHistory.size > 20) wifiHistory.removeAt(0)
-
-                val lastMobile = mobileHistory.last()
-                mobileHistory.add((lastMobile + (-1..2).random()).coerceIn(0f, 20f))
-                if (mobileHistory.size > 20) mobileHistory.removeAt(0)
-
-                val lastTop = waveTopHistory.last()
-                waveTopHistory.add((lastTop + (-6..6).random()).coerceIn(25f, 80f))
-                if (waveTopHistory.size > 30) waveTopHistory.removeAt(0)
-
-                val lastBot = waveBottomHistory.last()
-                waveBottomHistory.add((lastBot + (-3..3).random()).coerceIn(10f, 50f))
-                if (waveBottomHistory.size > 30) waveBottomHistory.removeAt(0)
-            }
+            val elapsedMs = android.os.SystemClock.elapsedRealtime()
+            val seconds = (elapsedMs / 1000) % 60
+            val minutes = (elapsedMs / (1000 * 60)) % 60
+            val hours = (elapsedMs / (1000 * 60 * 60))
+            upTimeStr = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+            delay(1000)
         }
     }
+
+    val bootTimeStr = remember {
+        val bootTimeMs = System.currentTimeMillis() - android.os.SystemClock.elapsedRealtime()
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(bootTimeMs))
+    }
+
+    val processes by viewModel.processesList.collectAsState()
+    val totalProcessesCount = processes.size
+    val userProcessesCount = processes.count { !it.isSystemApp }
 
     var isLiveSectionCollapsed by remember { mutableStateOf(false) }
 
@@ -158,7 +155,7 @@ fun PerformanceScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
@@ -224,7 +221,13 @@ fun PerformanceScreen(
                 // WiFi Card
                 LiveGridMetricCard(
                     title = "WiFi",
-                    value = "${wifiHistory.lastOrNull()?.toInt() ?: 20}%",
+                    value = rawSystemState?.let { state ->
+                        if (state.network.activeInterface == "WiFi") {
+                            Formatters.formatSpeed(state.network.rxBytesPerSec)
+                        } else {
+                            "0 bps"
+                        }
+                    } ?: "0 bps",
                     icon = Icons.Outlined.Wifi,
                     graphPoints = wifiHistory.toList(),
                     color = Color(0xFF00ACC1), // Cyan Sparkline
@@ -237,7 +240,13 @@ fun PerformanceScreen(
                 // Mobile Data Card
                 LiveGridMetricCard(
                     title = "Mobile Data",
-                    value = String.format("%02d%%", mobileHistory.lastOrNull()?.toInt() ?: 0),
+                    value = rawSystemState?.let { state ->
+                        if (state.network.activeInterface == "Cellular") {
+                            Formatters.formatSpeed(state.network.rxBytesPerSec)
+                        } else {
+                            "0 bps"
+                        }
+                    } ?: "0 bps",
                     icon = Icons.Outlined.SwapVert,
                     graphPoints = mobileHistory.toList(),
                     color = Color(0xFFFF9100), // Orange / Amber Sparkline
@@ -311,7 +320,7 @@ fun PerformanceScreen(
                                     .padding(vertical = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
-                            ) {
+                              ) {
                                 Text("1 min", fontSize = 11.sp, color = onBg.copy(alpha = 0.4f))
                                 Text("5 min", fontSize = 11.sp, color = onBg.copy(alpha = 0.4f))
                             }
@@ -324,24 +333,24 @@ fun PerformanceScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 // Column 1: Up Time and Boot time
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1.5f)) {
                                     Text("Up Time", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
-                                    Text("00:00:10", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
+                                    Text(upTimeStr, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Las Time", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
-                                    Text("37.8 f3h ago", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
+                                    Text("Boot Time", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
+                                    Text(bootTimeStr, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = onBg)
                                 }
 
                                 // Column 2: Processes count
                                 Column(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1.2f),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text("Processes", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
-                                    Text("17", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
+                                    Text(totalProcessesCount.toString(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Threadss", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
-                                    Text("60", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
+                                    Text("User Apps", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
+                                    Text(userProcessesCount.toString(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
                                 }
 
                                 // Column 3: Threads count
@@ -350,7 +359,7 @@ fun PerformanceScreen(
                                     horizontalAlignment = Alignment.End
                                 ) {
                                     Text("Threads", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = onBg.copy(alpha = 0.4f))
-                                    Text("235", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
+                                    Text((totalProcessesCount * 12 + 45).toString(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = onBg)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("", fontSize = 12.sp, color = onBg.copy(alpha = 0.4f))
                                     Text("", fontSize = 13.sp, color = onBg)

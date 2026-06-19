@@ -111,11 +111,33 @@ fun MainAppShell(
              }
  
              composable(Screen.Performance.route) {
-                 PerformanceScreen(viewModel = viewModel)
+                 PerformanceScreen(
+                     viewModel = viewModel,
+                     onBack = {
+                         if (navController.previousBackStackEntry != null) {
+                             navController.popBackStack()
+                         } else {
+                             navController.navigate(Screen.Processes.route) {
+                                 popUpTo(Screen.Processes.route) { inclusive = true }
+                             }
+                         }
+                     }
+                 )
              }
  
              composable(Screen.Details.route) {
-                 DetailsScreen(viewModel = viewModel)
+                 DetailsScreen(
+                     viewModel = viewModel,
+                     onBack = {
+                         if (navController.previousBackStackEntry != null) {
+                             navController.popBackStack()
+                         } else {
+                             navController.navigate(Screen.Processes.route) {
+                                 popUpTo(Screen.Processes.route) { inclusive = true }
+                             }
+                         }
+                     }
+                 )
              }
  
              composable(Screen.Services.route) {
