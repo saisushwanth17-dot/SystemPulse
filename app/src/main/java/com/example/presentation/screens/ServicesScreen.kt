@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 // Data class representing a toggleable Android Service mockup item
 data class ServiceMockState(
     val serviceName: String,
+    val displayName: String,
     val description: String,
     val isSystem: Boolean,
     var isEnabled: Boolean
@@ -68,44 +69,50 @@ fun ServicesScreen(
     var isUserGroup1Collapsed by remember { mutableStateOf(false) }
     var isUserGroup2Collapsed by remember { mutableStateOf(false) }
 
-    // Mock services database exactly as represented in the fourth screenshot
+    // Mock services database with beautifully friendly names and descriptions
     val servicesList = remember {
         mutableStateListOf(
             ServiceMockState(
                 "com.google.android.location",
-                "Controlled om.google.android.location description.",
+                "Google Location Engine",
+                "Coordinates high-precision network locations, GPS querying, and background geofencing APIs.",
                 isSystem = true,
                 isEnabled = true
             ),
             ServiceMockState(
                 "com.google.android.user",
-                "Convenient service clients convenient and android services.",
+                "Google Account Synchronizer",
+                "Coordinates background synchronization of user profiles, contacts, and personal preferences.",
                 isSystem = true,
                 isEnabled = true
             ),
             ServiceMockState(
                 "com.google.android.user",
-                "Unoptimize com.google.android service.",
+                "Background Battery Optimizer",
+                "Monitors background applications and prevents excessive resource/power consumption.",
                 isSystem = true,
                 isEnabled = false
             ),
             // User Services - Group 1
             ServiceMockState(
                 "com.google.android.manit",
-                "Convenient service advertising authorization, and extemination services.",
+                "Secure Ads & Auth Framework",
+                "Manages local application credentials, security checks, and user-consent monetization.",
                 isSystem = false,
                 isEnabled = true
             ),
             ServiceMockState(
                 "com.google.android.location",
-                "Provides diagnostic location, it already orients tracking.",
+                "Diagnostic Location Beacon",
+                "Provides supporting location tracking queries, compass calibration, and passive diagnostic telemetry.",
                 isSystem = false,
                 isEnabled = false
             ),
             // User Services - Group 2 (icon RedNet)
             ServiceMockState(
                 "com.google.android.icon",
-                "Configures to android icon and rednet for android service.",
+                "Adaptive Overlay & Launcher Service",
+                "Manages adaptive icon configurations and advanced overlay notification frameworks.",
                 isSystem = false, // Will group in Group 2
                 isEnabled = true
             )
@@ -370,10 +377,17 @@ fun ServiceItemRow(
             // Service texts
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = service.serviceName,
+                    text = service.displayName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = onBg
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = service.serviceName,
+                    fontSize = 10.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    color = onBg.copy(alpha = 0.35f)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
