@@ -28,6 +28,8 @@ import com.example.ui.theme.GlassAmbientBackground
 import com.example.ui.theme.glassmorphic
 import com.example.util.Formatters
 
+import androidx.compose.ui.platform.LocalContext
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
@@ -35,6 +37,7 @@ fun DetailsScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val processes by viewModel.processesList.collectAsState()
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val accentIndex by viewModel.accentColorIndex.collectAsState()
@@ -303,7 +306,20 @@ fun DetailsScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Settings", fontWeight = FontWeight.SemiBold) },
-                                    onClick = { selectedItemIndex = null }
+                                    onClick = {
+                                        try {
+                                            val intent = android.content.Intent(
+                                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                android.net.Uri.fromParts("package", process.packageName, null)
+                                            ).apply {
+                                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            // Fallback
+                                        }
+                                        selectedItemIndex = null
+                                    }
                                 )
                             }
                         }

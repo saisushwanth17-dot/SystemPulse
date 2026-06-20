@@ -522,9 +522,11 @@ fun MetricBox(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                fontSize = 14.sp,
+                fontSize = if (value.length > 5) 11.sp else 14.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = color
+                color = color,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -723,7 +725,19 @@ fun ElegantProcessRow(
 
                     // Teal App Info Button
                     Button(
-                        onClick = { /* Simulated or open package settings */ },
+                        onClick = {
+                            try {
+                                val intent = android.content.Intent(
+                                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    android.net.Uri.fromParts("package", process.packageName, null)
+                                ).apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (e: java.lang.Exception) {
+                                // Fallback
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00ACC1)),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(6.dp),
