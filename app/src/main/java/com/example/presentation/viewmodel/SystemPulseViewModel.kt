@@ -30,16 +30,37 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
     private val _accentColorIndex = MutableStateFlow(prefs.getInt("accent_color_index", 0)) // 0: Cyan, 1: Green, 2: Blue, 3: Orange, 4: Red
     val accentColorIndex: StateFlow<Int> = _accentColorIndex.asStateFlow()
 
+    // Active track of killed packages in the session and total Session memory freed to avoid immediate system restart appearance
+    private val killedPackagesSet = MutableStateFlow<Set<String>>(emptySet())
+    private val totalSessionFreedBytes = MutableStateFlow<Long>(0L)
+
     // Real-time System state flow, flatMapping to restart automatically on interval updates
-    val systemState: StateFlow<SystemOverviewState?> = _refreshIntervalMs
-        .flatMapLatest { interval ->
+    val systemState: StateFlow<SystemOverviewState?> = combine(
+        _refreshIntervalMs.flatMapLatest { interval ->
             repository.observeSystemState(interval)
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
+        },
+        totalSessionFreedBytes
+    ) { rawOverview, freedBytes ->
+        if (rawOverview == null) return@combine null
+        
+        // Subtract freed bytes from used RAM, keeping it positive and bounded
+        val rawRam = rawOverview.ram
+        val modifiedUsed = (rawRam.usedBytes - freedBytes).coerceAtLeast(rawRam.thresholdBytes)
+        val modifiedAvailable = rawRam.totalBytes - modifiedUsed
+        val modifiedPercent = if (rawRam.totalBytes > 0) (modifiedUsed.toFloat() / rawRam.totalBytes * 100f) else 0f
+        
+        rawOverview.copy(
+            ram = rawRam.copy(
+                availableBytes = modifiedAvailable,
+                usedBytes = modifiedUsed,
+                usagePercent = modifiedPercent
+            )
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     // Tracks permissions status
     private val _permissionsGranted = MutableStateFlow(checkPermissionsGranted())
@@ -98,7 +119,9 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
 
     fun refreshProcesses() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            _rawProcessesList.value = repository.getRunningProcesses()
+            val freshList = repository.getRunningProcesses()
+            val killed = killedPackagesSet.value
+            _rawProcessesList.value = freshList.filter { !killed.contains(it.packageName) }
         }
     }
 
@@ -106,6 +129,13 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             val process = _rawProcessesList.value.find { it.packageName == packageName }
             if (process != null) {
+                // Add to persistent local set of killed applications so they never show up again
+                val currentKilled = killedPackagesSet.value
+                killedPackagesSet.value = currentKilled + packageName
+                
+                // Add memory freed to total session freed bytes
+                totalSessionFreedBytes.value += process.ramBytesUsed
+                
                 // Remove from local raw state immediately
                 _rawProcessesList.value = _rawProcessesList.value.filter { it.packageName != packageName }
                 // Return amount of freed memory physically back to the UI block
@@ -119,6 +149,26 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
                     try {
                         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
                         am?.killBackgroundProcesses(packageName)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    
+                    // Since non-root apps cannot programmatically force stop foreground apps (like YouTube in PIP or overlay),
+                    // we guide the user to click Force Stop in system settings, deep-linking them directly for convenience.
+                    try {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Killed background services for ${process.appName}. Tap 'Force Stop' if it's currently on your screen.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                        
+                        val intent = android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.fromParts("package", packageName, null)
+                        ).apply {
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
