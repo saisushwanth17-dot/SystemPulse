@@ -391,10 +391,10 @@ fun ProcessesScreen(
                                 onToggleExpand = {
                                     expandedProcessPackage = if (expandedProcessPackage == process.packageName) null else process.packageName
                                 },
-                                onForceStop = {
+                                onEndTask = {
                                     viewModel.killProcess(process.packageName) { bytesFreed ->
                                         val freedMb = Formatters.formatBytes(bytesFreed)
-                                        boostMessage = "Terminated ${process.appName}. Reclaimed $freedMb!"
+                                        boostMessage = "Ended task for ${process.appName}. Reclaimed $freedMb!"
                                         coroutineScope.launch {
                                             delay(3000)
                                             boostMessage = null
@@ -435,10 +435,10 @@ fun ProcessesScreen(
                                 onToggleExpand = {
                                     expandedProcessPackage = if (expandedProcessPackage == process.packageName) null else process.packageName
                                 },
-                                onForceStop = {
+                                onEndTask = {
                                     viewModel.killProcess(process.packageName) { bytesFreed ->
                                         val freedMb = Formatters.formatBytes(bytesFreed)
-                                        boostMessage = "Force stopped kernel task ${process.appName}, recovered $freedMb!"
+                                        boostMessage = "Ended system task ${process.appName}, recovered $freedMb!"
                                         coroutineScope.launch {
                                             delay(3000)
                                             boostMessage = null
@@ -583,7 +583,7 @@ fun ElegantProcessRow(
     themeAccent: Color,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onForceStop: () -> Unit
+    onEndTask: () -> Unit
 ) {
     val context = LocalContext.current
     val mockCpuPercent = remember(process.packageName) {
@@ -753,16 +753,16 @@ fun ElegantProcessRow(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Red/Orange Force Stop Button
+                    // Red/Orange End Task Button
                     Button(
-                        onClick = onForceStop,
+                        onClick = onEndTask,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
                         Text(
-                            text = "Force Stop",
+                            text = "End Task",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

@@ -153,22 +153,12 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
                         e.printStackTrace()
                     }
                     
-                    // Since non-root apps cannot programmatically force stop foreground apps (like YouTube in PIP or overlay),
-                    // we guide the user to click Force Stop in system settings, deep-linking them directly for convenience.
                     try {
                         android.widget.Toast.makeText(
                             context,
-                            "Killed background services for ${process.appName}. Tap 'Force Stop' if it's currently on your screen.",
-                            android.widget.Toast.LENGTH_LONG
+                            "Task ended successfully for ${process.appName}.",
+                            android.widget.Toast.LENGTH_SHORT
                         ).show()
-                        
-                        val intent = android.content.Intent(
-                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            android.net.Uri.fromParts("package", packageName, null)
-                        ).apply {
-                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
