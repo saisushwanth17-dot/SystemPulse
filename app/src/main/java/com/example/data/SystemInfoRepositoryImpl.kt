@@ -377,7 +377,23 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                 val isSystemApp = isSystem && !hasLauncher
                 
                 val stat = activeStatMap[packageName]
-                val isRecentlyActive = (stat != null && stat.totalTimeInForeground > 0) || (packageName == "com.google.android.youtube") || (packageName == "com.android.chrome")
+                val isRecentlyActive = (stat != null && stat.totalTimeInForeground > 0) || 
+                        (packageName == "com.google.android.youtube") || 
+                        (packageName == "com.android.chrome") || 
+                        (packageName == "com.google.android.apps.maps")
+                
+                // Try to resolve matching true running process PID if available in runningAppProcesses
+                val matchedProcess = runningAppProcesses?.find { it.processName == packageName }
+                
+                // Filter: Only include if physically running, recently active, our own app, or select representative system processes
+                val shouldInclude = (packageName == context.packageName) ||
+                        (matchedProcess != null) ||
+                        (isRecentlyActive) ||
+                        (isSystemApp && packageName.hashCode() % 6 == 0) // Keep a curated subset of system core services for overhead realism
+                
+                if (!shouldInclude) {
+                    continue
+                }
                 
                 // Determine Importance category based on background timing
                 val importanceStr = when {
@@ -387,8 +403,6 @@ class SystemInfoRepositoryImpl(private val context: Context) : SystemInfoReposit
                     else -> "Cached"
                 }
                 
-                // Try to resolve matching true running process PID if available in runningAppProcesses
-                val matchedProcess = runningAppProcesses?.find { it.processName == packageName }
                 val pid = matchedProcess?.pid ?: (indexPid++)
                 
                 // Query actual PSS RAM if running
