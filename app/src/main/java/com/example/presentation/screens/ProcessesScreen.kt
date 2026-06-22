@@ -101,16 +101,7 @@ fun ProcessesScreen(
                             color = onBg
                         )
                     },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = onBg
-                            )
-                        }
-                    },
-                actions = {
+                    actions = {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -709,16 +700,23 @@ fun ElegantProcessRow(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Package: ${process.packageName}",
-                            fontSize = 10.sp,
-                            color = onBg.copy(alpha = 0.4f),
-                            fontFamily = FontFamily.Monospace,
+                            text = "Role: ${Formatters.getSimpleRoleName(process.packageName, process.appName)}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = onBg.copy(alpha = 0.82f),
                             maxLines = 1
                         )
                         Text(
-                            text = "Priority State: ${process.importance}",
+                            text = "Status: ${Formatters.getSimplePriorityName(process.importance)}",
                             fontSize = 10.sp,
-                            color = onBg.copy(alpha = 0.4f),
+                            color = onBg.copy(alpha = 0.6f),
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "Package: ${process.packageName}",
+                            fontSize = 9.sp,
+                            color = onBg.copy(alpha = 0.35f),
+                            fontFamily = FontFamily.Monospace,
                             maxLines = 1
                         )
                     }

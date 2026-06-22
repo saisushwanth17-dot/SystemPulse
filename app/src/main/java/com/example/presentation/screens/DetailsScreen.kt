@@ -234,26 +234,39 @@ fun DetailsScreen(
                                 // Process Details
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = process.packageName,
+                                        text = process.appName,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = onBg,
                                         maxLines = 1
                                     )
+                                    Text(
+                                        text = Formatters.getSimpleRoleName(process.packageName, process.appName),
+                                        fontSize = 11.sp,
+                                        color = onBg.copy(alpha = 0.55f),
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = process.packageName,
+                                        fontSize = 9.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = onBg.copy(alpha = 0.3f),
+                                        maxLines = 1
+                                    )
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 2.dp)
+                                        modifier = Modifier.padding(top = 1.dp)
                                     ) {
                                         Text(
                                             text = statusText,
-                                            fontSize = 11.sp,
+                                            fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = statusColor
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = Formatters.formatBytes(process.ramBytesUsed),
-                                            fontSize = 11.sp,
+                                            fontSize = 10.sp,
                                             color = onBg.copy(alpha = 0.4f)
                                         )
                                     }
