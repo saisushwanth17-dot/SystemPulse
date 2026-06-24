@@ -141,27 +141,12 @@ class SystemPulseViewModel(private val context: Context) : ViewModel() {
                 // Return amount of freed memory physically back to the UI block
                 onFreed(process.ramBytesUsed)
 
-                // Terminate process physically via activity manager
+                // Terminate process physically via utility methods
                 if (packageName == context.packageName) {
                     android.os.Process.killProcess(android.os.Process.myPid())
                     System.exit(0)
                 } else {
-                    try {
-                        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-                        am?.killBackgroundProcesses(packageName)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    
-                    try {
-                        android.widget.Toast.makeText(
-                            context,
-                            "Task ended successfully for ${process.appName}.",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    com.example.util.ProcessKillerUtil.endTask(context, packageName, process.appName)
                 }
             }
         }

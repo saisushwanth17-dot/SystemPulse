@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SystemPulse</string>
+    <string name="accessibility_service_desc">Automatically clicks Force Stop in Settings to completely end tasks and reclaim memory when you trigger the End Task feature.</string>
 </resources>
