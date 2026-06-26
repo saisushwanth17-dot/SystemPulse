@@ -48,10 +48,15 @@ object ProcessKillerUtil {
 
     private fun openAppSettings(context: Context, packageName: String, appName: String) {
         try {
+            // Set up state variables in ForceStopAccessibilityService so it knows to auto-click
+            com.example.service.ForceStopAccessibilityService.targetPackage = packageName
+            com.example.service.ForceStopAccessibilityService.currentState = com.example.service.ForceStopAccessibilityService.STATE_WAITING_FOR_APP_INFO
+            com.example.service.ForceStopAccessibilityService.lastActionTime = System.currentTimeMillis()
+
             Toast.makeText(
                 context,
-                "Root unavailable. Opening App Info for $appName to auto-click Force Stop via Accessibility Service...",
-                Toast.LENGTH_LONG
+                "Ending task for $appName. Completing automatically...",
+                Toast.LENGTH_SHORT
             ).show()
 
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
